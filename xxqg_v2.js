@@ -133,6 +133,6 @@ function main()
     videoCollectAndShare();//视频收藏与分享
 
     toast("运行结束");
-}
+} 
 
 main();
