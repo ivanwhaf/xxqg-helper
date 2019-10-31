@@ -228,7 +228,7 @@ function main()
     delay(wTime);//等应用启动完毕
     var start=new Date().getTime();
     articleStudy();//文章学习，包含点赞分享和评论
-    //videoStudy();//视频学习
+    videoStudy();//视频学习
     var end=new Date().getTime();
     toast("运行结束"+"共耗时"+(end-start)/1000+"秒");
 }
