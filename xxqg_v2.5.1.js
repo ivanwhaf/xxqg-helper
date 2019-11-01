@@ -135,7 +135,7 @@ function videoStudy()
     var listView=className("ListView");//获取listView视频列表控件用于翻页
     for(var i=0,t=0;i<vCount;)
     {
-        if(click("央视网",t)==true)
+        if(click("中央广播电视总台",t)==true)
         {
             if(i==0)
             {
