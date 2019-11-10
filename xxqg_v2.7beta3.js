@@ -52,6 +52,7 @@ function article_timing(n,seconds)
         delay(1);
         if(i%10==0)//每10秒滑动一次，如果android版本<7.0请将此滑动代码删除
         {
+            toast("这是防息屏toast,请忽视-。-");
             if(i<=seconds/2)
             {
                 swipe(x,h1,x,h2,500);//向下滑动
@@ -76,7 +77,7 @@ function video_timing(n,seconds)
         while(!textContains("分享").exists())//如果离开了百灵小视频界面则一直等待
         {
             console.error("当前已离开百灵小视频界面，请重新返回视频...");
-            delay(1);
+            delay(2);
         }
         delay(1);
         console.info("第"+(n+1)+"个小视频已经观看"+(i+1)+"秒,剩余"+(seconds-i-1)+"秒!");
@@ -267,7 +268,7 @@ function articleStudy()
                 console.warn("首页没有找到当天文章，即将学习昨日新闻!");
                 continue;
             }
-            if(fail>3)//连续翻几页没有点击成功则认为今天的新闻还没出来，学习昨天的
+            if(fail>4)//连续翻几页没有点击成功则认为今天的新闻还没出来，学习昨天的
             {
                 s=getYestardayDateString();
                 delay(1);
@@ -306,7 +307,7 @@ function videoStudy()
     delay(1);
     for(var i=0;i<vCount;i++)
     {
-        console.log("即将观看第"+(i+1)+"个小视频");
+        console.log("正在观看第"+(i+1)+"个小视频");
         video_timing(i,vTime);//观看每个小视频
         if(i!=vCount-1){
             swipe(x,h1,x,h2,500);//往下滑
