@@ -5,13 +5,13 @@
  * @Date: 2019-11-7
  */
 
-var aCount=10;//文章学习篇数
+var aCount=8;//文章学习篇数
 var vCount=6;//“百灵”小视频学习个数
 var cCount=2;//收藏+分享+评论次数
 
-var aTime=75;//每篇文章学习-72秒 72*10=12分钟
+var aTime=93;//每篇文章学习-90秒 90*8=720秒=12分钟
 var rTime=1080;//广播收听-18分钟
-var vTime=16;//每个“百灵”小视频学习-18秒
+var vTime=16;//每个“百灵”小视频学习-16秒
 
 var commentText=["支持党，支持国家！","为实现中华民族伟大复兴而不懈奋斗！","紧跟党走，毫不动摇！","不忘初心，牢记使命","努力奋斗，回报祖国！"];//评论内容，可自行修改，大于5个字便计分
 
@@ -205,23 +205,23 @@ function articleStudy()
     {
         if(click(s,t)==true)//如果点击成功则进入文章页面,不成功意味着本页已经到底,要翻页
         {   
-            delay(1.5);
-            if(desc("简介").exists())//如果存在“简介”则认为进入了文章栏中的视频界面需退出
+            delay(1.5);//等待加载出界面
+            if(desc("展开").exists())//如果存在“展开”则认为进入了文章栏中的视频界面需退出
             {
                 delay(1);
                 console.warn("进入了视频界面，即将退出并进下一篇文章!");
                 t++;
                 back();
-                delay(1.5);
+                delay(1);
                 click("电台");
-                delay(1.5);
+                delay(1);
                 click("中国之声");
                 console.log("因为广播被打断，正在重新收听广播...");
                 delay(2);
                 back();
                 while(!desc("学习").exists());
                 desc("学习").click();
-                delay(1.5);
+                delay(1);
                 continue;
             }
             var n=0;
@@ -230,13 +230,13 @@ function articleStudy()
                 delay(1);
                 n++;
                 console.warn("没找到评论框!该界面非文章界面!");
-                if(n>4)//等待超过5秒则认为进入了专题界面，退出进下一篇文章
+                if(n>3)//等待超过4秒则认为进入了专题界面，退出进下一篇文章
                 {
                     flag=true;
                     break;
                 }
             }
-            if(flag==true)
+            if(flag==true)//进入专题页的标志
             {
                 console.warn("进入了专题界面，即将退出并进下一篇文章!")
                 t++;
@@ -246,7 +246,7 @@ function articleStudy()
                 continue;
             }
             console.log("正在学习第"+(i+1)+"篇文章...");
-            fail=0;
+            fail=0;//失败清0
             var wave=random(-5,5);//上下随机波动5秒
             article_timing(i,aTime+wave);
             if(i<cCount)//收藏分享2篇文章
@@ -262,10 +262,18 @@ function articleStudy()
         }
         else
         {
-            if(i==0)
+            if(i==0)//如果第一次点击就没点击成功则认为首页无当天文章
             {
                 s=getYestardayDateString();
                 console.warn("首页没有找到当天文章，即将学习昨日新闻!");
+                continue;
+            }
+            if(fail>5)
+            {
+                s=getTodayDateString();
+                console.warn("昨天新闻也没找到..继续学今天的吧");
+                t=0;
+                fail=0;
                 continue;
             }
             if(fail>4)//连续翻几页没有点击成功则认为今天的新闻还没出来，学习昨天的
@@ -293,9 +301,9 @@ function videoStudy()
 {
     h=device.height;//屏幕高
     w=device.width;//屏幕宽
-    x=(w/3)*2;
-    h1=(h/6)*5;
-    h2=(h/6);
+    x=(w/3)*2;//横坐标2分之3处
+    h1=(h/6)*5;//纵坐标6分之5处
+    h2=(h/6);//纵坐标6分之1处
 
     click("百灵");
     delay(2);
@@ -304,13 +312,13 @@ function videoStudy()
     //var a=className("FrameLayout").depth(23).findOnce(0);//根据控件搜索视频框，但部分手机不适配，改用下面坐标点击
     //a.click();//点击小视频
     click(w/2,h/4);//坐标点击第一个视频
-    delay(1);
+    delay(2);
     for(var i=0;i<vCount;i++)
     {
         console.log("正在观看第"+(i+1)+"个小视频");
         video_timing(i,vTime);//观看每个小视频
         if(i!=vCount-1){
-            swipe(x,h1,x,h2,500);//往下滑
+            swipe(x,h1,x,h2,500);//往下翻（纵坐标从5/6处滑到1/6处）
         }
     }
     back();
@@ -330,8 +338,8 @@ function listenToRadio()
     delay(2);
     click("中国之声");
     console.log("正在收听“中国之声”广播...");
-    delay(2);
-    back();
+    delay(3);
+    back();//返回电台界面
     delay(1);
 }
 
@@ -388,7 +396,7 @@ function main()
 {
     auto.waitFor();//等待获取无障碍辅助权限
     console.show();//部分华为手机console有bug请注释本行
-    console.setPosition(0,device.height/4);
+    console.setPosition(0,device.height/4);//部分华为手机console有bug请注释本行
     console.log("学习强国助手启动中...");
     if(!launchApp("学习强国"))//启动学习强国app
     {
@@ -406,8 +414,8 @@ function main()
     articleStudy();//学习文章，包含点赞分享和评论
     listenToRadio();
     var end=new Date().getTime();
-    var radio_time=(parseInt((end-r_start)/1000));//剩余广播需收听时间
-    radio_timing(parseInt((end-r_start)/1000),rTime-radio_time);//继续收听广播
+    var radio_time=(parseInt((end-r_start)/1000));//广播已经收听的时间
+    radio_timing(parseInt((end-r_start)/1000),rTime-radio_time);//rTime-radio_time为剩余需要收听的广播时间
     var end=new Date().getTime();
 
     console.log("运行结束,共耗时"+(parseInt(end-start))/1000+"秒");
