@@ -714,6 +714,10 @@ function challengeQuestionLoop(conNum)
     }
     else{
         console.error("提取题目失败!");
+        var listArray = className("ListView").findOnce().children();//题目选项列表
+        let i=random(0,listArray.length-1);
+        console.log("随机点击一个");
+        listArray[i].child(0).click();//随意点击一个答案
         return;
     }
 
