@@ -1,8 +1,8 @@
 "ui";
 importClass(android.database.sqlite.SQLiteDatabase);
 /**
- * @Description: Auto.js学习强国助手 (6+6)+(6+6)+(1+1+2)=28分
- * @version: 3.0
+ * @Description: Auto.js xxqg-helper (6+6)+(6+6)+(1+1+2)+6=34分
+ * @version: 3.0.0
  * @Author: Ivan
  * @Date: 2019-12-30
  */
@@ -17,7 +17,9 @@ var rTime=1080;//广播收听-18分钟
 
 var commentText=["支持党，支持国家！","为实现中华民族伟大复兴而不懈奋斗！","紧跟党走，毫不动摇！","不忘初心，牢记使命","努力奋斗，报效祖国！"];//评论内容，可自行修改，大于5个字便计分
 var aCatlog="推荐"//文章学习类别
-var qCount=1;//挑战答题次数
+
+var qCount=3;//挑战答题轮数
+
 /**
  * @description: 延时函数
  * @param: seconds-延迟秒数
@@ -344,7 +346,7 @@ function videoStudy_news(vCount,vTime)
     click("电视台");
     delay(1.5)
     click("联播频道");
-    delay(2);
+    delay(3);
     var listView=className("ListView");//获取listView视频列表控件用于翻页
     let s=getYestardayDateString();
     let date=new Date();
@@ -543,7 +545,7 @@ ui.layout(
         </horizontal>
 
         <horizontal>
-            <text textSize="16sp" textColor="black" text="挑战答题轮数(一轮10题):"/>
+            <text textSize="16sp" textColor="black" text="挑战答题轮数(一轮5题):"/>
             <input id="qcount" text=""/>
         </horizontal>
 
@@ -694,12 +696,21 @@ function  getAnswer(question)
  * @param: null
  * @return: null
  */
-function challengeQuestionLoop()
+function challengeQuestionLoop(conNum)
 {
-    //while(!descContains("出题").exists());//等待加载出答题页面
+    if(conNum>=5)//答题次数足够退出，每轮5次
+    {
+        var listArray = className("ListView").findOnce().children();//题目选项列表
+        let i=random(0,listArray.length-1);
+        console.log("次数足够，随机点击一个答错退出");
+        listArray[i].child(0).click();//随意点击一个答案
+        console.log("-----------------------------------------------------------");
+        return;
+    }
+
     if (className("ListView").exists()){
         var question = className("ListView").findOnce().parent().child(0).desc();
-        console.log("题目："+question);
+        console.log((conNum+1).toString()+".题目："+question);
     }
     else{
         console.error("提取题目失败!");
@@ -742,7 +753,6 @@ function challengeQuestionLoop()
         listArray[i].child(0).click();//随意点击一个答案
         hasClicked=true;
         console.log("-----------------------------------------------------------");
-        delay(1.5);
     }
     else//如果找到了答案
     {
@@ -752,7 +762,6 @@ function challengeQuestionLoop()
                 item.child(0).click();//点击答案
                 hasClicked=true;
                 console.log("-----------------------------------------------------------");
-                delay(1.5);
             }
         });
     }
@@ -777,37 +786,35 @@ function challengeQuestion(qCount)
     click("我要答题");
     delay(1.5);
     desc("挑战答题").click();
-    delay(3);
+    delay(4);
     let conNum=0;//连续答对的次数
+    let qNum=1;//轮数
     while (true) {
-        challengeQuestionLoop();
-        delay(1);
-        if (desc("结束本局").exists())
+        challengeQuestionLoop(conNum);
+        delay(2.5);
+        if(desc("结束本局").exists())
         {
-            conNum=0;
-            if(conNum>=qCount*10){
-                back();delay(0.5);
-                back();delay(0.5);
-                back();delay(0.5);
+            if(qNum>=qCount && conNum>=5){
+                back();delay(1);
+                back();delay(1);
+                back();delay(1);
                 break;
             }
             else{
+                console.log("等10秒开始下一轮")
+                delay(10);//等待10秒才能开始下一轮
                 desc("结束本局").click();
                 delay(2);
                 desc("挑战答题").click();
-                delay(3);
+                delay(4);
             }
+            qNum++;
+            conNum=0;
+            console.warn("第"+qNum.toString()+"轮开始...")
         }
         else
         {
             conNum++;
-            if(conNum>qCount*10){
-                back();delay(0.5);
-                desc("退出").click();delay(1);
-                back();delay(0.5);
-                back();delay(0.5);
-                break;
-            }
         }
     }
     console.log("挑战答题结束！");
