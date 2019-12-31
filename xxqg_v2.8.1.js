@@ -341,9 +341,9 @@ function videoStudy_bailing(vCount,vTime)
 function videoStudy_news(vCount,vTime)
 {
     click("电视台");
-    delay(2)
+    delay(1.5)
     click("联播频道");
-    delay(1);
+    delay(2);
     var listView=className("ListView");//获取listView视频列表控件用于翻页
     let s=getYestardayDateString();
     let date=new Date();
@@ -363,18 +363,12 @@ function videoStudy_news(vCount,vTime)
             delay(1);
             i++;
             t++;//t为实际点击的文章在listView控件中的标号,和i不同,勿改动!
-            if(i==3)
-            {
-                listView.scrollForward();//翻页
-                delay(1);
-                t=1
-            }
         }
         else
         {
             listView.scrollForward();//翻页
             delay(1);
-            t=2;
+            t=4;
         }
     }
 }
