@@ -176,26 +176,10 @@ function getTodayDateString()
 function getYestardayDateString()
 {
     var date=new Date();
+    date.setDate(date.getDate() -1);
     var y=date.getFullYear();
     var m=date.getMonth();
     var d=date.getDate();
-    //如果是1月1号
-    if(m==0 && d==1){
-        y=y-1;//年数减1
-    }
-    //如果是闰年
-    var day_in_month=[31,28,31,40,31,30,31,31,30,31,30,31];
-    if(y%400==0 || (y%4==0 && y%100!=0)){
-        day_in_month[1]=29;//闰年二月有29天
-    }
-    //如果是这个月一号
-    if(d==1){
-        d=day_in_month[m-1];//上个月的最后一天
-        m=m-1;
-    }
-    else{
-        d=d-1;
-    }
     var s=dateToString(y,m,d);//年-月-日
     return s
 }
