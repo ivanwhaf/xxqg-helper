@@ -2,9 +2,9 @@
 importClass(android.database.sqlite.SQLiteDatabase);
 /**
  * @Description: Auto.js xxqg-helper (6+6)+(6+6)+(1+1+2)+6=34分
- * @version: 3.0.0
+ * @version: 3.0.2
  * @Author: Ivan
- * @Date: 2019-12-30
+ * @Date: 2020-1-5
  */
 
 var aCount=8;//文章学习篇数
@@ -19,6 +19,7 @@ var commentText=["支持党，支持国家！","为实现中华民族伟大复�
 var aCatlog="推荐"//文章学习类别
 
 var qCount=3;//挑战答题轮数
+var lNum=5;//每轮答题数
 
 /**
  * @description: 延时函数
@@ -176,7 +177,7 @@ function getTodayDateString()
 function getYestardayDateString()
 {
     var date=new Date();
-    date.setDate(date.getDate() -1);
+    date.setDate(date.getDate()-1);
     var y=date.getFullYear();
     var m=date.getMonth();
     var d=date.getDate();
@@ -205,7 +206,19 @@ function articleStudy(aCount,aTime,cCount,aCatlog)
     {
         if(click(date_string,t)==true)//如果点击成功则进入文章页面,不成功意味着本页已经到底,要翻页
         {   
-            delay(1.5);//等待加载出界面
+            let n=0;
+            while(!textContains("欢迎发表你的观点").exists())//如果没有找到评论框则认为没有进入文章界面，一直等待
+            {
+                delay(1);
+                console.warn("正在等待加载文章界面...");
+                if(n>3)//等待超过3秒则认为进入了专题界面，退出进下一篇文章
+                {
+                    console.warn("没找到评论框!该界面非文章界面!");
+                    zt_flag=true;
+                    break;
+                }
+                n++;
+            }
             if(desc("展开").exists())//如果存在“展开”则认为进入了文章栏中的视频界面需退出
             {
                 console.warn("进入了视频界面，即将退出并进下一篇文章!");
@@ -220,21 +233,8 @@ function articleStudy(aCount,aTime,cCount,aCatlog)
                 back();
                 while(!desc("学习").exists());
                 desc("学习").click();
-                delay(1);
+                delay(2);
                 continue;
-            }
-            var n=0;
-            while(!textContains("欢迎发表你的观点").exists())//如果没有找到评论框则认为没有进入文章界面，一直等待
-            {
-                delay(1);
-                console.warn("正在等待加载文章界面...");
-                if(n>2)//等待超过3秒则认为进入了专题界面，退出进下一篇文章
-                {
-                    console.warn("没找到评论框!该界面非文章界面!");
-                    zt_flag=true;
-                    break;
-                }
-                n++;
             }
             if(zt_flag==true)//进入专题页标志
             {
@@ -247,7 +247,6 @@ function articleStudy(aCount,aTime,cCount,aCatlog)
             }
             console.log("正在学习第"+(i+1)+"篇文章...");
             fail=0;//失败次数清0
-            //var wave=random(-5,5);//上下随机波动5秒
             article_timing(i,aTime);
             if(i<cCount)//收藏分享2篇文章
             {
@@ -274,7 +273,7 @@ function articleStudy(aCount,aTime,cCount,aCatlog)
                 console.warn("没有找到当天文章，即将学习昨日新闻!");
                 continue;
             }
-            if(!textContains(date_string).exists())
+            if(!textContains(date_string).exists())//当前页面当天新闻
             {
                 fail++;//失败次数加一
             }
@@ -335,7 +334,7 @@ function videoStudy_news(vCount,vTime)
     let s=getYestardayDateString();
     let date=new Date();
     let hour=date.getHours()
-    if(hour>=21){
+    if(hour>=21){//晚上9点之后就能学习当天联播
         s=getTodayDateString();
     }
 
@@ -644,7 +643,7 @@ ui.about.click(function(){
 
 
 
-/*************************************************答题部分**********************************************************/
+/*************************************************答题部分********************************************************/
 /**
  * @description: 从数据库中搜索答案
  * @param: question 问题
@@ -656,7 +655,7 @@ function  getAnswer(question)
     var path=files.path(dbName);
     if (!files.exists(path)) {
         //files.createWithDirs(path);
-        console.error("未找到题库!");
+        console.error("未找到题库!请将题库放置与js同一目录下");
         return '';
     }
 
@@ -675,16 +674,20 @@ function  getAnswer(question)
     }
 }
 
+function indexFromChar(str) {
+    return str.charCodeAt(0) - "A".charCodeAt(0);
+}
+
 /**
  * @description: 每次答题循环
- * @param: null
+ * @param: conNum 连续答对的次数
  * @return: null
  */
 function challengeQuestionLoop(conNum)
 {
-    if(conNum>=5)//答题次数足够退出，每轮5次
+    if(conNum>=lNum)//答题次数足够退出，每轮5次
     {
-        var listArray = className("ListView").findOnce().children();//题目选项列表
+        let listArray = className("ListView").findOnce().children();//题目选项列表
         let i=random(0,listArray.length-1);
         console.log("次数足够，随机点击一个答错退出");
         listArray[i].child(0).click();//随意点击一个答案
@@ -698,7 +701,7 @@ function challengeQuestionLoop(conNum)
     }
     else{
         console.error("提取题目失败!");
-        var listArray = className("ListView").findOnce().children();//题目选项列表
+        let listArray = className("ListView").findOnce().children();//题目选项列表
         let i=random(0,listArray.length-1);
         console.log("随机点击一个");
         listArray[i].child(0).click();//随意点击一个答案
@@ -733,7 +736,7 @@ function challengeQuestionLoop(conNum)
     }
 
     let hasClicked=false;
-    var listArray = className("ListView").findOnce().children();//题目选项列表
+    let listArray = className("ListView").findOnce().children();//题目选项列表
     if(answer=="")//如果没找到答案
     {
         let i=random(0,listArray.length-1);
@@ -764,7 +767,7 @@ function challengeQuestionLoop(conNum)
 
 /**
  * @description: 挑战答题
- * @param: null
+ * @param: qCount 轮数
  * @return: null
  */
 function challengeQuestion(qCount)
@@ -774,15 +777,15 @@ function challengeQuestion(qCount)
     click("我要答题");
     delay(1.5);
     desc("挑战答题").click();
-    delay(4);
-    let conNum=0;//连续答对的次数
-    let qNum=1;//轮数
+    delay(4.5);
+    let conNum=0;// 连续答对的次数
+    let qNum=1;// 轮数
     while (true) {
         challengeQuestionLoop(conNum);
-        delay(2.5);
-        if(desc("结束本局").exists())
+        delay(3);
+        if(desc("结束本局").exists())// 答错了
         {
-            if(qNum>=qCount && conNum>=5){
+            if(qNum>=qCount && conNum>=lNum){
                 back();delay(1);
                 back();delay(1);
                 back();delay(1);
@@ -790,7 +793,7 @@ function challengeQuestion(qCount)
             }
             else{
                 console.log("等10秒开始下一轮")
-                delay(10);//等待10秒才能开始下一轮
+                delay(10);// 等待10秒才能开始下一轮
                 desc("结束本局").click();
                 delay(2);
                 desc("挑战答题").click();
@@ -800,7 +803,7 @@ function challengeQuestion(qCount)
             conNum=0;
             console.warn("第"+qNum.toString()+"轮开始...")
         }
-        else
+        else// 答对了
         {
             conNum++;
         }
