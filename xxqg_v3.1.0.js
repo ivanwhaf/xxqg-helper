@@ -2,24 +2,25 @@
 importClass(android.database.sqlite.SQLiteDatabase);
 /**
  * @Description: Auto.js xxqg-helper (6+6)+(6+6)+(1+1+2)+6=34分
- * @version: 3.0.2
+ * @version: 3.1.0
  * @Author: Ivan
- * @Date: 2020-1-5
+ * @Date: 2020-1-15
  */
 
 var aCount=8;//文章学习篇数
-var vCount=7;//小视频学习个数
+var vCount=8;//小视频学习个数
 var cCount=2;//收藏+分享+评论次数
 
 var aTime=90;//每篇文章学习-90秒 90*8=720秒=12分钟
-var vTime=16;//每个小视频学习-16秒
+var vTime=15;//每个小视频学习-15秒
 var rTime=1080;//广播收听-18分钟
 
 var commentText=["支持党，支持国家！","为实现中华民族伟大复兴而不懈奋斗！","紧跟党走，毫不动摇！","不忘初心，牢记使命","努力奋斗，报效祖国！"];//评论内容，可自行修改，大于5个字便计分
 var aCatlog="推荐"//文章学习类别
 
-var qCount=3;//挑战答题轮数
-var lNum=5;//每轮答题数
+var lCount=3;//挑战答题轮数
+var qCount=5;//挑战答题每轮答题数
+var dlCount=3;//每日答题轮数
 
 /**
  * @description: 延时函数
@@ -190,7 +191,7 @@ function getYestardayDateString()
  * @param: null
  * @return: null
  */
-function articleStudy(aCount,aTime,cCount,aCatlog)
+function articleStudy()
 {
     while(!desc("学习").exists());//等待加载出主页
     desc("学习").click();//点击主页正下方的"学习"按钮
@@ -205,7 +206,7 @@ function articleStudy(aCount,aTime,cCount,aCatlog)
     for(var i=0,t=0;i<aCount;)
     {
         if(click(date_string,t)==true)//如果点击成功则进入文章页面,不成功意味着本页已经到底,要翻页
-        {   
+        {
             let n=0;
             while(!textContains("欢迎发表你的观点").exists())//如果没有找到评论框则认为没有进入文章界面，一直等待
             {
@@ -301,8 +302,6 @@ function videoStudy_bailing(vCount,vTime)
     delay(2);
     click("竖");
     delay(2);
-    gesture(500,[w/2,h/4],[w/2,h/3],[w/2,h/4]);//稍微滑动一下，防止检测
-    delay(1);
     var a=className("FrameLayout").depth(23).findOnce(0);//根据控件搜索视频框，但部分手机不适配，改用下面坐标点击
     a.click();
     //click((w/2)+random()*10,h/4);//坐标点击第一个视频
@@ -321,23 +320,20 @@ function videoStudy_bailing(vCount,vTime)
 
 /**
  * @description:新闻联播小视频学习函数
- * @param: vCount,vTime
+ * @param: null
  * @return: null
  */
-function videoStudy_news(vCount,vTime)
+function videoStudy_news()
 {
     click("电视台");
-    delay(1.5)
+    delay(2)
     click("联播频道");
     delay(3);
     var listView=className("ListView");//获取listView视频列表控件用于翻页
-    let s=getYestardayDateString();
-    let date=new Date();
-    let hour=date.getHours()
-    if(hour>=21){//晚上9点之后就能学习当天联播
-        s=getTodayDateString();
+    let s="中央广播电视总台";
+    if(!textContains("中央广播电视总台")){
+        s="央视网";
     }
-
     for(var i=0,t=1;i<vCount;)
     {
         if(click(s,t)==true)
@@ -348,13 +344,19 @@ function videoStudy_news(vCount,vTime)
             while(!desc("学习").exists());//等待加载出主页
             delay(1);
             i++;
-            t++;//t为实际点击的文章在listView控件中的标号,和i不同,勿改动!
+            t++;
+            if(i==3)
+            {
+                listView.scrollForward();//翻页
+                delay(2);
+                t=2;
+            }
         }
         else
         {
             listView.scrollForward();//翻页
             delay(2);
-            t=4;
+            t=3;
         }
     }
 }
@@ -457,7 +459,7 @@ function Comment(i)
  */
 function start_app()
 {
-    console.setPosition(0,device.height/4);//部分华为手机console有bug请注释本行
+    console.setPosition(0,device.height/2);//部分华为手机console有bug请注释本行
     console.show();//部分华为手机console有bug请注释本行
     console.log("正在启动app...");
     if(!launchApp("学习强国"))//启动学习强国app
@@ -474,15 +476,16 @@ function start_app()
 }
 
 //主函数
-function main(aCount,aTime,vCount,vTime,rTime,cCount,aCatlog,qCount)
+function main()
 {
     start_app();//启动app
     var start=new Date().getTime();//程序开始时间
-    challengeQuestion(qCount);//挑战答题
-    videoStudy_news(vCount,vTime);//看小视频
+    challengeQuestion();//挑战答题
+    dailyQuestion();
+    videoStudy_news();//看小视频
     listenToRadio();//听电台广播
     var r_start=new Date().getTime();//广播开始时间
-    articleStudy(aCount,aTime,cCount,aCatlog);//学习文章，包含点赞、分享和评论
+    articleStudy();//学习文章，包含点赞、分享和评论
     listenToRadio();//继续听电台
     var end=new Date().getTime();//广播结束时间
     var radio_time=(parseInt((end-r_start)/1000));//广播已经收听的时间
@@ -497,39 +500,44 @@ auto.waitFor();//等待获取无障碍辅助权限
 ui.layout(
     <vertical>
         <text textSize="16sp" textColor="red" text="欢迎使用xxqg-helper!"/>
-        <button id="all" h="80" text="完整运行"/>
-        <button id="article" text="只阅读文章（含收藏分享）"/>
-        <button id="vr" text="只看视频和听广播"/>
-        <button id="csc" text="只收藏分享评论"/>
+        <button id="all" h="70" text="完整运行"/>
+        <button id="article" text="阅读文章（含收藏分享评论）"/>
+        <button id="vr" text="看视频和听广播"/>
+        <button id="csc" text="收藏分享评论"/>
         <button id="cq" text="挑战答题"/>
+        <button id="dq" text="每日答题"/>
         <button id="stop" text="停止运行"/>
         <horizontal>
             <text textSize="16sp" textColor="black" text="文章数量(个):"/>
             <input id="acount" w="40" text=""/>
-            <text textSize="16sp" textColor="black" text="视频数量(个):"/>
+            <text textSize="16sp" marginLeft="15" textColor="black" text="视频数量(个):"/>
             <input id="vcount" w="40" text=""/>
         </horizontal>
 
         <horizontal>
             <text textSize="16sp" textColor="black" text="文章时长(秒):"/>
             <input id="atime" w="40" text=""/>
-            <text textSize="16sp" textColor="black" text="视频时长(秒):"/>
+            <text textSize="16sp" marginLeft="15" textColor="black" text="视频时长(秒):"/>
             <input id="vtime" w="40" text=""/>
         </horizontal>
 
         <horizontal>
-            <text textSize="16sp" textColor="black" text="广播收听总时长(秒):"/>
+            <text textSize="16sp" textColor="black" text="广播时长(秒):"/>
             <input id="rtime" text=""/>
-        </horizontal>
-
-        <horizontal>
-            <text textSize="16sp" textColor="black" text="文章学习类别:"/>
+            <text textSize="16sp" marginLeft="15" textColor="black" text="文章学习类别:"/>
             <input id="acatlog" text=""/>
         </horizontal>
 
         <horizontal>
-            <text textSize="16sp" textColor="black" text="挑战答题轮数(一轮5题):"/>
+            <text textSize="16sp" textColor="black" text="挑战答题轮数:"/>
+            <input id="lcount" text=""/>
+            <text textSize="16sp" marginLeft="15" textColor="black" text="挑战答题每轮答题数:"/>
             <input id="qcount" text=""/>
+        </horizontal>
+
+        <horizontal>
+            <text textSize="16sp" textColor="black" text="每日答题轮数:"/>
+            <input id="dlcount" text=""/>
         </horizontal>
 
         <button w="200" layout_gravity="center" id="about" text="关于本助手"/>
@@ -542,7 +550,9 @@ ui.atime.setText(aTime.toString());
 ui.vtime.setText(vTime.toString());
 ui.rtime.setText(rTime.toString());
 ui.acatlog.setText(aCatlog.toString());
+ui.lcount.setText(lCount.toString());
 ui.qcount.setText(qCount.toString());
+ui.dlcount.setText(dlCount.toString());
 
 var thread=null;
 ui.all.click(function(){
@@ -552,14 +562,16 @@ ui.all.click(function(){
     }
     toast("开始完整运行");
     thread=threads.start(function(){
-        aCount=ui.acount.getText()
-        vCount=ui.vcount.getText()
-        aTime=ui.atime.getText()
-        vTime=ui.vtime.getText()
-        rTime=ui.rtime.getText()
-        aCatlog=ui.acatlog.getText()
-        qCount=ui.qcount.getText()
-        main(aCount,aTime,vCount,vTime,rTime,cCount,aCatlog,qCount);
+        aCount=ui.acount.getText();
+        vCount=ui.vcount.getText();
+        aTime=ui.atime.getText();
+        vTime=ui.vtime.getText();
+        rTime=ui.rtime.getText();
+        aCatlog=ui.acatlog.getText();
+        lCount=ui.lcount.getText();
+        qCount=ui.qcount.getText();
+        dlCount=ui.dlcount.getText();
+        main();
     });
 });
 
@@ -571,10 +583,10 @@ ui.article.click(function(){
     toast("开始看文章");
     thread=threads.start(function(){
         start_app();
-        aCount=ui.acount.getText()
-        aTime=ui.atime.getText()
-        aCatlog=ui.acatlog.getText()
-        articleStudy(aCount,aTime,cCount,aCatlog);
+        aCount=ui.acount.getText();
+        aTime=ui.atime.getText();
+        aCatlog=ui.acatlog.getText();
+        articleStudy();
     });
 });
 
@@ -586,10 +598,10 @@ ui.vr.click(function(){
     toast("开始看视频和听广播");
     thread=threads.start(function(){
         start_app();
-        vCount=ui.vcount.getText()
-        vTime=ui.vtime.getText()
-        rTime=ui.rtime.getText()
-        videoStudy_news(vCount,vTime);
+        vCount=ui.vcount.getText();
+        vTime=ui.vtime.getText();
+        rTime=ui.rtime.getText();
+        videoStudy_news();
         listenToRadio();
         radio_timing(0,rTime);
     });
@@ -608,7 +620,7 @@ ui.csc.click(function(){
             CollectAndShare(i);//收藏+分享
             Comment(i);//评论
         }
-        console.hide()
+        console.hide();
     });
 
 });
@@ -619,11 +631,23 @@ ui.cq.click(function(){
         return;
     }
     thread=threads.start(function(){
-        qCount=ui.qcount.getText()
+        lCount=ui.lcount.getText();
+        qCount=ui.qcount.getText();
         start_app();
-        challengeQuestion(qCount);
+        challengeQuestion();
     });
+});
 
+ui.dq.click(function(){
+    if(thread!=null && thread.isAlive()){
+        alert("注意!","当前程序正在运行，请结束之前进程");
+        return;
+    }
+    thread=threads.start(function(){
+        dlCount=ui.dlcount.getText();
+        start_app();
+        dailyQuestion();
+    });
 });
 
 ui.stop.click(function(){
@@ -643,7 +667,7 @@ ui.about.click(function(){
 
 
 
-/*************************************************答题部分********************************************************/
+/*************************************************挑战答题部分******************************************************/
 /**
  * @description: 从数据库中搜索答案
  * @param: question 问题
@@ -664,7 +688,7 @@ function  getAnswer(question)
     var cursor = db.rawQuery(sql, null);
     if(cursor.moveToFirst()){
         var answer=cursor.getString(0);
-        cursor.close()
+        cursor.close();
         return answer;
     }
     else{
@@ -672,6 +696,24 @@ function  getAnswer(question)
         cursor.close();
         return '';
     }
+}
+
+/**
+ * @description: 增加或更新数据库
+ * @param: sql
+ * @return: null
+ */
+function insertOrUpdate(sql) {
+    var dbName = "tiku.db";
+    var path = files.path(dbName);
+    if (!files.exists(path)) {
+        //files.createWithDirs(path);
+        console.error("未找到题库!请将题库放置与js同一目录下");
+    }
+
+    var db = SQLiteDatabase.openOrCreateDatabase(path, null);
+    db.execSQL(sql);
+    db.close();
 }
 
 function indexFromChar(str) {
@@ -685,11 +727,11 @@ function indexFromChar(str) {
  */
 function challengeQuestionLoop(conNum)
 {
-    if(conNum>=lNum)//答题次数足够退出，每轮5次
+    if(conNum>=qCount)//答题次数足够退出，每轮5次
     {
         let listArray = className("ListView").findOnce().children();//题目选项列表
         let i=random(0,listArray.length-1);
-        console.log("次数足够，随机点击一个答错退出");
+        console.log("本轮次数足够，随机点击一个答案，答错进入下一轮");
         listArray[i].child(0).click();//随意点击一个答案
         console.log("-----------------------------------------------------------");
         return;
@@ -767,46 +809,345 @@ function challengeQuestionLoop(conNum)
 
 /**
  * @description: 挑战答题
- * @param: qCount 轮数
+ * @param: null
  * @return: null
  */
-function challengeQuestion(qCount)
+function challengeQuestion()
 {
-    click("我的");
-    delay(1.5);
+    text("我的").click();
+    while(!textContains("我要答题").exists());
+    delay(1);
     click("我要答题");
-    delay(1.5);
+    while(!desc("挑战答题").exists());
+    delay(1);
     desc("挑战答题").click();
-    delay(4.5);
+    delay(4);
     let conNum=0;// 连续答对的次数
-    let qNum=1;// 轮数
+    let lNum=1;// 轮数
     while (true) {
         challengeQuestionLoop(conNum);
         delay(3);
-        if(desc("结束本局").exists())// 答错了
+        if(desc("结束本局").exists())//答错了
         {
-            if(qNum>=qCount && conNum>=lNum){
+            if(lNum>=lCount && conNum>=qCount){
+                console.log("挑战答题结束！返回主页！");
                 back();delay(1);
                 back();delay(1);
                 back();delay(1);
                 break;
             }
             else{
-                console.log("等10秒开始下一轮")
-                delay(10);// 等待10秒才能开始下一轮
+                console.log("等10秒开始下一轮...")
+                delay(10);//等待10秒才能开始下一轮
                 desc("结束本局").click();
                 delay(2);
                 desc("挑战答题").click();
                 delay(4);
+                if(conNum>=5){
+                    lNum++;
+                }
+                conNum=0;
             }
-            qNum++;
-            conNum=0;
-            console.warn("第"+qNum.toString()+"轮开始...")
+            console.warn("第"+lNum.toString()+"轮开始...")
         }
-        else// 答对了
+        else//答对了
         {
             conNum++;
         }
     }
-    console.log("挑战答题结束！");
+}
+
+/*************************************************每日答题部分***************************************************/
+
+/**
+ * @description: 获取填空题题目数组
+ * @param: null
+ * @return: questionArray
+ */
+function getFitbQuestion()
+{
+    var questionCollections=className("EditText").findOnce().parent().parent();
+    var questionArray = [];
+    questionCollections.children().forEach(item => {
+        if (item.childCount() == 0) { //题目段
+            questionArray.push(item.desc());
+        } else {
+            var blankNumStr = "|" + (item.childCount() - 1).toString();
+            questionArray.push(blankNumStr);
+        }
+    });
+    return questionArray;
+}
+
+
+/**
+ * @description: 获取选择题题目数组
+ * @param: null
+ * @return: questionArray
+ */
+function getChoiceQuestion()
+{
+    var questionCollections = className("ListView").findOnce().parent().child(1);
+    var questionArray = [];
+    questionArray.push(questionCollections.desc());
+    return questionArray;
+}
+
+
+/**
+ * @description: 获取提示字符串
+ * @param: null
+ * @return: tipsStr
+ */
+function getTipsStr(){
+    var tipsStr = "";
+    while (tipsStr == "") {
+        if (desc("查看提示").exists()) {           
+            var seeTips=desc("查看提示").findOnce();
+            seeTips.click();
+            delay(1);
+            click(device.width*0.5,device.height*0.41);
+            delay(1);
+            click(device.width*0.5,device.height*0.35);
+        } else {
+            console.error("未找到查看提示");
+        }
+        if (desc("提示").exists()) {
+            var tipsLine = desc("提示").findOnce().parent();
+            //获取提示内容
+            var tipsView = tipsLine.parent().child(1).child(0);
+            tipsStr = tipsView.desc();
+            //关闭提示
+            tipsLine.child(1).click();
+            break;
+        }
+        else{
+            console.error("未找到提示控件，请手动关闭提示以便再次打开");
+        } 
+    }
+    return tipsStr;
+}
+
+
+/**
+ * @description: 从提示中获取填空题答案
+ * @param: null
+ * @return: ansTips
+ */
+function getAnswerFromTips(timu, tipsStr) {
+    var ansTips = "";
+    for (var i = 1; i < timu.length - 1; i++) {
+        if (timu[i].charAt(0) == "|") {
+            var blankLen = timu[i].substring(1);
+            var indexKey = tipsStr.indexOf(timu[i + 1]);
+            var ansFind = tipsStr.substr(indexKey - blankLen, blankLen);
+            ansTips += ansFind;
+        }
+    }
+    return ansTips;
+}
+
+/**
+ * @description: 根据提示点击选择题选项
+ * @param: tipsStr
+ * @return: null
+ */
+function clickByTips(tipsStr) {
+    var clickStr = "";
+    var isFind = false;
+    if (className("ListView").exists()) {
+        var listArray = className("ListView").findOne().children();
+        listArray.forEach(item => {
+            var ansStr = item.child(0).child(2).desc();
+            if (tipsStr.indexOf(ansStr) >= 0) {
+                item.child(0).click();
+                clickStr += item.child(0).child(1).desc().charAt(0);
+                isFind = true;
+            }
+        });
+        if (!isFind) { //没有找到 点击第一个
+            listArray[0].child(0).click();
+            clickStr += listArray[0].child(0).child(1).desc().charAt(0);
+        }
+    }
+    return clickStr;
+}
+
+
+/**
+ * @description: 根据答案点击选择题选项
+ * @param: answer
+ * @return: null
+ */
+function clickByAnswer(answer) {
+    if (className("ListView").exists()) {
+        var listArray = className("ListView").findOnce().children();
+        listArray.forEach(item => {
+            var listIndexStr = item.child(0).child(1).desc().charAt(0);
+            //单选答案为非ABCD
+            var listDescStr = item.child(0).child(2).desc();
+            if (answer.indexOf(listIndexStr)>=0 || answer==listDescStr) {
+                item.child(0).click();
+            }
+        });
+    }
+}
+
+/**
+ * @description: 检查答案是否正确，并更新数据库
+ * @param: question, ansTiku, answer
+ * @return: null
+ */
+function checkAndUpdate(question, ansTiku, answer) {
+    if (className("Button").desc("下一题").exists() || className("Button").desc("完成").exists()) {//答错了
+        swipe(100, device.height - 100, 100, 100, 500);
+        var nCout = 0
+        while (nCout < 5) {
+            if (descStartsWith("正确答案").exists()) {
+                var correctAns = descStartsWith("正确答案").findOnce().desc().substr(5);
+                console.info("正确答案是："+correctAns);
+                if (ansTiku == "") { //题库为空则插入正确答案                
+                    var sql = "INSERT INTO tiku VALUES ('" + question + "','" + correctAns + "','')";
+                } else { //更新题库答案
+                    var sql = "UPDATE tiku SET answer='" + correctAns + "' WHERE question LIKE '" + question + "'";
+                }
+                insertOrUpdate(sql);
+                console.log("更新题库答案...");
+                delay(1);
+                break;
+            } else {
+                var clickPos = className("android.webkit.WebView").findOnce().child(2).child(0).child(1).bounds();
+                click(clickPos.left + device.width * 0.13, clickPos.top + device.height * 0.1);
+                console.error("未捕获正确答案，尝试修正");
+            }
+            nCout++;
+        }
+        if (className("Button").exists()) {
+            className("Button").findOnce().click();
+        } else {
+            click(device.width * 0.85, device.height * 0.06);
+        }
+    } else { //正确后进入下一题，或者进入再来一局界面
+        if (ansTiku == "" && answer != "") { //正确进入下一题，且题库答案为空              
+            var sql = "INSERT INTO tiku VALUES ('" + question + "','" + answer + "','')";
+            insertOrUpdate(sql);
+            console.log("更新题库答案...");
+        }
+    }
+}
+
+
+/**
+ * @description: 每日答题循环
+ * @param: null
+ * @return: null
+ */
+function dailyQuestionLoop()
+{
+    if(desc("填空题").exists()){
+        var questionArray=getFitbQuestion();
+    }
+    else if(desc("多选题").exists() || desc("单选题").exists()){
+        var questionArray=getChoiceQuestion();
+    }
+
+    var blankArray = [];
+    var question = "";
+    questionArray.forEach(item => {
+        if (item.charAt(0) == "|") { //是空格数
+            blankArray.push(item.substring(1));
+        } else { //是题目段
+            question += item;
+        }
+    });
+    question = question.replace(/\s/g, "");
+    console.log("题目：" + question);
+
+    var ansTiku=getAnswer(question);
+    var answer=ansTiku;
+
+    if(desc("填空题").exists()){
+        if(answer==""){
+            var tipsStr = getTipsStr();
+            answer = getAnswerFromTips(questionArray, tipsStr);
+            console.info("提示中的答案：" + answer);
+            setText(0, answer.substr(0, blankArray[0]));
+            if (blankArray.length > 1) {
+                for (var i = 1; i < blankArray.length; i++) {
+                    setText(i, answer.substr(blankArray[i - 1], blankArray[i]));
+                }
+            }
+        } else {
+            console.info("答案：" + answer);
+            setText(0, answer.substr(0, blankArray[0]));
+            if (blankArray.length > 1) {
+                for (var i = 1; i < blankArray.length; i++) {
+                    setText(i, answer.substr(blankArray[i - 1], blankArray[i]));
+                }
+            }
+        }   
+    }
+    else if(desc("多选题").exists() || desc("单选题").exists()){
+        if (answer==""){
+            var tipsStr = getTipsStr();
+            answer = clickByTips(tipsStr);
+            console.info("提示中的答案：" + answer);
+        } else {
+            console.info("答案：" + ansTiku);
+            clickByAnswer(answer);
+        }
+    }
+    delay(0.5);
+    if(desc("确定").exists())
+    {
+        desc("确定").click();
+    }
+    else{
+        console.warn("未找到右上角确定按钮控件，根据坐标点击");
+        click(device.width * 0.85, device.height * 0.06);//右上角确定按钮，根据自己手机实际修改
+    }
+    delay(1);
+    checkAndUpdate(question, ansTiku, answer);
+    console.log("-----------------------------------------------------------");
+    delay(2);
+}
+
+/**
+ * @description: 每日答题
+ * @param: null
+ * @return: null
+ */
+function dailyQuestion()
+{
+    text("我的").click();
+    while(!textContains("我要答题").exists());
+    delay(1);
+    click("我要答题");
+    while(!desc("每日答题").exists());
+    delay(1);
+    desc("每日答题").click();
+    delay(2);
+    let dlNum=0;//每日答题轮数
+    while(true)
+    {
+        dailyQuestionLoop();
+        if(desc("再来一组").exists())
+        {
+            dlNum++;
+            if(dlNum<dlCount)
+            {
+                desc("再来一组").click();
+                console.warn("第"+(dlNum+1).toString()+"轮答题:");
+                delay(1);          
+            }
+            else
+            {
+                console.log("每日答题结束！返回主页！")
+                desc("返回").click();delay(0.5);
+                back();delay(1);
+                back();delay(1);
+                break;
+            }
+        }
+    }
 }
