@@ -1,7 +1,7 @@
 "ui";
 importClass(android.database.sqlite.SQLiteDatabase);
 /**
- * @Description: Auto.js xxqg-helper (6+6)+(6+6)+(1+1+2)+6=34分
+ * @Description: Auto.js xxqg-helper (6+6)+(6+6)+(1+1+2)+6+6=40分
  * @version: 3.1.0
  * @Author: Ivan
  * @Date: 2020-1-15
@@ -20,7 +20,7 @@ var aCatlog="推荐"//文章学习类别
 
 var lCount=3;//挑战答题轮数
 var qCount=5;//挑战答题每轮答题数
-var dlCount=3;//每日答题轮数
+//var dlCount=3;//每日答题轮数
 
 /**
  * @description: 延时函数
@@ -481,7 +481,7 @@ function main()
     start_app();//启动app
     var start=new Date().getTime();//程序开始时间
     challengeQuestion();//挑战答题
-    dailyQuestion();
+    dailyQuestion();//每日答题
     videoStudy_news();//看小视频
     listenToRadio();//听电台广播
     var r_start=new Date().getTime();//广播开始时间
@@ -535,11 +535,6 @@ ui.layout(
             <input id="qcount" text=""/>
         </horizontal>
 
-        <horizontal>
-            <text textSize="16sp" textColor="black" text="每日答题轮数:"/>
-            <input id="dlcount" text=""/>
-        </horizontal>
-
         <button w="200" layout_gravity="center" id="about" text="关于本助手"/>
     </vertical> 
 );
@@ -552,7 +547,7 @@ ui.rtime.setText(rTime.toString());
 ui.acatlog.setText(aCatlog.toString());
 ui.lcount.setText(lCount.toString());
 ui.qcount.setText(qCount.toString());
-ui.dlcount.setText(dlCount.toString());
+//ui.dlcount.setText(dlCount.toString());
 
 var thread=null;
 ui.all.click(function(){
@@ -570,7 +565,7 @@ ui.all.click(function(){
         aCatlog=ui.acatlog.getText();
         lCount=ui.lcount.getText();
         qCount=ui.qcount.getText();
-        dlCount=ui.dlcount.getText();
+        //dlCount=ui.dlcount.getText();
         main();
     });
 });
@@ -644,7 +639,7 @@ ui.dq.click(function(){
         return;
     }
     thread=threads.start(function(){
-        dlCount=ui.dlcount.getText();
+        //dlCount=ui.dlcount.getText();
         start_app();
         dailyQuestion();
     });
@@ -710,7 +705,6 @@ function insertOrUpdate(sql) {
         //files.createWithDirs(path);
         console.error("未找到题库!请将题库放置与js同一目录下");
     }
-
     var db = SQLiteDatabase.openOrCreateDatabase(path, null);
     db.execSQL(sql);
     db.close();
@@ -950,7 +944,7 @@ function getAnswerFromTips(timu, tipsStr) {
 /**
  * @description: 根据提示点击选择题选项
  * @param: tipsStr
- * @return: null
+ * @return: clickStr
  */
 function clickByTips(tipsStr) {
     var clickStr = "";
@@ -1133,12 +1127,13 @@ function dailyQuestion()
         dailyQuestionLoop();
         if(desc("再来一组").exists())
         {
+            delay(2);
             dlNum++;
-            if(dlNum<dlCount)
+            if(!desc("领取奖励已达今日上限").exists())
             {
                 desc("再来一组").click();
                 console.warn("第"+(dlNum+1).toString()+"轮答题:");
-                delay(1);          
+                delay(1);
             }
             else
             {
