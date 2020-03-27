@@ -19,6 +19,8 @@
 [lgpersonal](https://github.com/lgpersonal/LazyStudy)
 
 # 更新日志
+## v3.1.2
+* 修复每日答题布局问题，新增根据分数学习
 ## v3.1.1
 * 新增本地频道（1分），修改挑战答题控制逻辑（app布局更新）
 ## v3.1.0
