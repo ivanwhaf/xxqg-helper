@@ -445,8 +445,9 @@ function localChannel() {
     if (text("新思想").exists()) {
         text("新思想").findOne().parent().parent().child(3).click();
         delay(3);
-        className("android.support.v7.widget.RecyclerView").findOne().child(2).click();
-        delay(2);
+        className("android.support.v7.widget.RecyclerView").findOne().child(3).click();
+        console.log("观看本地频道，获取1积分");
+        delay(9);
         console.log("返回主界面");
         back();
         text("新思想").findOne().parent().parent().child(0).click();
