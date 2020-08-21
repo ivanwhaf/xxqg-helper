@@ -18,22 +18,32 @@ importClass(android.database.sqlite.SQLiteDatabase);
 
 var aCount = 6;//文章默认学习篇数
 var vCount = 6;//小视频默认学习个数
-var cCount = 2;//收藏+分享+评论次数
+var cCount = 1;//评论次数
+var sCount = 2;//分享次数
 
-var aTime = 103;//每篇文章学习-103秒 103*7≈720秒=12分钟
+var aTime = 70;//有效阅读一分钟1分*6
 var vTime = 15;//每个小视频学习-15秒
-var rTime = 1080;//广播收听-18分钟
+var rTime = 370;//广播收听6分 * 60 = 360秒
 
 var commentText = ["支持党，支持国家！", "为实现中华民族伟大复兴而不懈奋斗！", "紧跟党走，毫不动摇！",
     "不忘初心，牢记使命", "努力奋斗，报效祖国！"];//评论内容，可自行修改，大于5个字便计分
 
 var aCatlog = "推荐"//文章学习类别，可自定义修改为“要闻”、“新思想”等
 
-var lCount = 3;//挑战答题轮数
+var lCount = 1;//挑战答题轮数
 var qCount = 5;//挑战答题每轮答题数
 var myScores = {};//分数
 
 var customize_flag = false;//自定义运行标志
+
+/**
+ * @description: 生成min~max的随机数
+ * @param: min-较小的数，max-较大的数
+ * @return: 随机数
+ */
+function randomNum(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 /**
  * @description: 延时函数
@@ -217,21 +227,19 @@ function articleStudy() {
                 }
                 n++;
             }
-            if (desc("展开").exists())//如果存在“展开”则认为进入了文章栏中的视频界面需退出
+            if (text("展开").exists())//如果存在“展开”则认为进入了文章栏中的视频界面需退出
             {
-                console.warn("进入了视频界面，退出并进下一篇文章!");
+                console.warn("进入了视频界面，退出并进入下一篇文章!");
                 t++;
                 back();
-                while (!desc("学习").exists());
-                delay(0.5);
-                click("电台");
-                delay(1);
-                click("最近收听");
-                console.log("因为广播被打断，重新收听广播...");
-                delay(1);
-                back();
-                while (!desc("学习").exists());
-                desc("学习").click();
+                if (rTime != 0) {
+                    while (!desc("学习").exists());
+                    console.info("因为广播被打断，重新收听广播...");
+                    delay(0.5);
+                    listenToRadio();//听电台广播
+                    while (!desc("学习").exists());
+                    desc("学习").click();
+                }
                 delay(1);
                 continue;
             }
@@ -247,10 +255,15 @@ function articleStudy() {
             console.log("正在学习第" + (i + 1) + "篇文章...");
             fail = 0;//失败次数清0
             article_timing(i, aTime);
-            if (i < cCount)//收藏分享2篇文章
+            if (sCount != 0)//分享2篇文章
             {
-                CollectAndShare(i);//收藏+分享 若c运行到此报错请注释本行！
+                CollectAndShare(i);//分享 若运行到此报错请注释本行！
+                sCount--;
+            }
+            if (cCount != 0)//评论1次
+            {
                 Comment(i);//评论
+                cCount--;
             }
             back();//返回主界面
             while (!desc("学习").exists());//等待加载出主页
@@ -263,13 +276,11 @@ function articleStudy() {
             {
                 date_string = getYestardayDateString();
                 console.warn("首页没有找到当天文章，即将学习昨日新闻!");
-                continue;
             }
             if (fail > 3)//连续翻几页没有点击成功则认为今天的新闻还没出来，学习昨天的
             {
                 date_string = getYestardayDateString();
                 console.warn("没有找到当天文章，即将学习昨日新闻!");
-                continue;
             }
             if (!textContains(date_string).exists())//当前页面当天新闻
             {
@@ -362,19 +373,21 @@ function listenToRadio() {
     delay(1);
     click("听新闻广播");
     delay(2);
-    if (textContains("最近收听").exists()) {
-        click("最近收听");
-        console.log("正在收听广播...");
+    while (!(textContains("正在收听").exists() || textContains("最近收听").exists() || textContains("推荐收听").exists())) {
+        log("等待加载");
         delay(1);
-        back();//返回电台界面
-        return;
     }
-    if (textContains("推荐收听").exists()) {
-        click("推荐收听");
-        console.log("正在收听广播...");
-        delay(1);
+    if (click("最近收听") == 0) {
+        if (click("推荐收听") == 0) {
+            click("正在收听");
+        }
+    }
+    delay(2);
+    if (id("btn_back").findOne().click() == 0) {
+        delay(2);
         back();//返回电台界面
     }
+    delay(2);
 }
 
 /**
@@ -388,23 +401,23 @@ function CollectAndShare(i) {
         delay(1);
         console.log("等待进入文章界面")
     }
-    console.log("正在进行第" + (i + 1) + "次收藏和分享...");
+    console.log("正在进行第" + (i + 1) + "次分享...");
 
     var textOrder = text("欢迎发表你的观点").findOnce().drawingOrder();
-    var collectOrder = textOrder + 2;
+    // var collectOrder = textOrder + 2;
     var shareOrder = textOrder + 3;
-    var collectIcon = className("ImageView").filter(function (iv) {
-        return iv.drawingOrder() == collectOrder;
-    }).findOnce();
+    // var collectIcon = className("ImageView").filter(function (iv) {
+    //     return iv.drawingOrder() == collectOrder;
+    // }).findOnce();
 
     var shareIcon = className("ImageView").filter(function (iv) {
         return iv.drawingOrder() == shareOrder;
     }).findOnce();
 
     //var collectIcon = classNameContains("ImageView").depth(10).findOnce(0);//右下角收藏按钮
-    collectIcon.click();//点击收藏
-    console.info("收藏成功!");
-    delay(1);
+    // collectIcon.click();//点击收藏
+    // console.info("收藏成功!");
+    // delay(1);
 
     //var shareIcon = classNameContains("ImageView").depth(10).findOnce(1);//右下角分享按钮
     shareIcon.click();//点击分享
@@ -416,9 +429,9 @@ function CollectAndShare(i) {
     back();//返回文章界面
     delay(1);
 
-    collectIcon.click();//再次点击，取消收藏
-    console.info("取消收藏!");
-    delay(1);
+    // collectIcon.click();//再次点击，取消收藏
+    // console.info("取消收藏!");
+    // delay(1);
 }
 
 /**
@@ -484,7 +497,7 @@ function getScores() {
         } else if (text("积分").exists()) {
             text("积分").findOnce().parent().child(1).click();
         }
-        delay(1);
+        delay(2);
     }
 
     let err = false;
@@ -503,11 +516,15 @@ function getScores() {
     }
     console.log(myScores);
 
-    aCount = 6 - myScores["阅读文章"];
-    aTime = parseInt((6 - myScores["文章学习时长"]) * 120 / aCount) + 10;
+    aCount = Math.ceil((12 - myScores["我要选读文章"]) / 2); //文章个数
     vCount = 6 - myScores["视听学习"];
-    rTime = (6 - myScores["视听学习时长"]) * 180;
+    rTime = (6 - myScores["视听学习时长"]) * 60;
+    asub = 2 - myScores["订阅"];
+    sCount = 2 - myScores["分享"] * 2
+    cCount = 1 - myScores["发表观点"]
 
+    console.log('评论：' + cCount.toString() + '个')
+    console.log('分享：' + sCount.toString() + '个')
     console.log('剩余文章：' + aCount.toString() + '篇')
     console.log('剩余每篇文章学习时长：' + aTime.toString() + '秒')
     console.log('剩余视频：' + vCount.toString() + '个')
@@ -547,49 +564,27 @@ function main() {
     start_app();//启动app
     var start = new Date().getTime();//程序开始时间
 
-    if (customize_flag == true) {
-        //自定义学习，各项目执行顺序可换
-        localChannel();//本地频道
-        challengeQuestion();//挑战答题
-        dailyQuestion();//每日答题
-        videoStudy_news();//看视频
+    getScores();//获取积分
+    if (rTime != 0) {
         listenToRadio();//听电台广播
-        var r_start = new Date().getTime();//广播开始时间
-        articleStudy();//学习文章，包含点赞、分享和评论
-        if (rTime != 0) {
-            listenToRadio();//继续听电台
-        }
-        var end = new Date().getTime();//广播结束时间
-        var radio_time = (parseInt((end - r_start) / 1000));//广播已经收听的时间
-        radio_timing(parseInt((end - r_start) / 1000), rTime - radio_time);//广播剩余需收听时间
     }
-    else {
-        getScores();//获取积分
-        if (myScores['本地频道'] != 1) {
-            localChannel();//本地频道
-        }
-        if (myScores['挑战答题'] != 6) {
-            challengeQuestion();//挑战答题
-        }
-        if (myScores['每日答题'] != 6) {
-            dailyQuestion();//每日答题
-        }
-        if (vCount != 0) {
-            videoStudy_news();//看视频
-        }
-        if (rTime != 0) {
-            listenToRadio();//听电台广播
-        }
-        var r_start = new Date().getTime();//广播开始时间
-        articleStudy();//学习文章，包含点赞、分享和评论
-        if (rTime != 0) {
-            listenToRadio();//继续听电台
-        }
-        var end = new Date().getTime();//广播结束时间
-        var radio_time = (parseInt((end - r_start) / 1000));//广播已经收听的时间
-        radio_timing(parseInt((end - r_start) / 1000), rTime - radio_time);//广播剩余需收听时间
+    var r_start = new Date().getTime();//广播开始时间
+    if (myScores['挑战答题'] != 6) {
+        challengeQuestion();//挑战答题
     }
-
+    if (myScores['每日答题'] != 6) {
+        dailyQuestion();//每日答题
+    }
+    articleStudy();//学习文章，包含点赞、分享和评论
+    var end = new Date().getTime();//广播结束时间
+    var radio_time = (parseInt((end - r_start) / 1000));//广播已经收听的时间
+    radio_timing(parseInt((end - r_start) / 1000), rTime - radio_time);//广播剩余需收听时间
+    if (myScores['本地频道'] != 1) {
+        localChannel();//本地频道
+    }
+    if (vCount != 0) {
+        videoStudy_news();//看视频
+    }
     end = new Date().getTime();
     console.log("运行结束,共耗时" + (parseInt(end - start)) / 1000 + "秒");
 }
@@ -809,16 +804,15 @@ function indexFromChar(str) {
  * @return: null
  */
 function challengeQuestionLoop(conNum) {
-    if (conNum >= qCount)//答题次数足够退出，每轮5次
+    if (conNum >= qCount)//答题次数足够退出
     {
         let listArray = className("ListView").findOnce().children();//题目选项列表
         let i = random(0, listArray.length - 1);
-        console.log("本轮次数足够，随机点击一个答案，答错进入下一轮");
+        console.log("今天答题次数已够，随机点击一个答案");
         listArray[i].child(0).click();//随意点击一个答案
-        console.log("-----------------------------------------------------------");
+        console.log("------------");
         return;
     }
-
     if (className("ListView").exists()) {
         var question = className("ListView").findOnce().parent().child(0).text();
         console.log((conNum + 1).toString() + ".题目：" + question);
@@ -871,7 +865,7 @@ function challengeQuestionLoop(conNum) {
         console.error("没有找到答案，随机点击一个");
         listArray[i].child(0).click();//随意点击一个答案
         hasClicked = true;
-        console.log("-----------------------------------------------------------");
+        console.log("------------");
     }
     else//如果找到了答案
     {
@@ -880,7 +874,7 @@ function challengeQuestionLoop(conNum) {
             if (listDescStr == answer) {
                 item.child(0).click();//点击答案
                 hasClicked = true;
-                console.log("-----------------------------------------------------------");
+                console.log("------------");
             }
         });
     }
@@ -889,9 +883,10 @@ function challengeQuestionLoop(conNum) {
         console.error("未能成功点击，随机点击一个");
         let i = random(0, listArray.length - 1);
         listArray[i].child(0).click();//随意点击一个答案
-        console.log("-----------------------------------------------------------");
+        console.log("------------");
     }
 }
+
 
 /**
  * @description: 挑战答题
@@ -909,46 +904,48 @@ function challengeQuestion() {
     console.log("开始挑战答题")
     delay(4);
     let conNum = 0;//连续答对的次数
-    let lNum = 1;//轮数
+    let lNum = 0;//轮数
     while (true) {
+        delay(1)
+        while (!className("RadioButton").exists()) {
+            console.error("没有找到题目！请检查是否进入答题界面！");
+            delay(2);
+        }
         challengeQuestionLoop(conNum);
-        delay(3);
+        delay(randomNum(3, 6));
         if (text("v5IOXn6lQWYTJeqX2eHuNcrPesmSud2JdogYyGnRNxujMT8RS7y43zxY4coWepspQkvw" +
             "RDTJtCTsZ5JW+8sGvTRDzFnDeO+BcOEpP0Rte6f+HwcGxeN2dglWfgH8P0C7HkCMJOAAAAAElFTkSuQmCC").exists())//遇到❌号，则答错了,不再通过结束本局字样判断
         {
-            if (lNum >= lCount && conNum >= qCount) {
-                console.log("挑战答题结束！返回主页！");
-                /* 回退4次返回主页 */
-                back(); delay(1);
-                back(); delay(1);
-                back(); delay(1);
-                back(); delay(1);
+            if (conNum >= qCount) {
+                lNum++;
+            }
+            if (lNum >= lCount) {
+                console.log("挑战答题结束！返回积分界面！");
+                back(); delay(0.5);
+                back(); delay(0.5);
+                back(); delay(0.5);
+                back(); delay(0.5);
                 break;
             }
             else {
-                console.log("等10秒开始下一轮...")
-                delay(8);//等待10秒才能开始下一轮
+                console.log("出现错误，等5秒开始下一轮...")
+                delay(3);//等待5秒才能开始下一轮
                 back();
                 //desc("结束本局").click();//有可能找不到结束本局字样所在页面控件，所以直接返回到上一层
-                delay(1);
-                //desc("再来一局").click();
-                back();
-                while (!text("挑战答题").exists());
-                delay(1);
-                text("挑战答题").click();
+                delay(2);
+                text("再来一局").click()
                 delay(4);
-                if (conNum >= qCount) {
-                    lNum++;
+                if (conNum < 5) {
+                    conNum = 0;
                 }
-                conNum = 0;
             }
-            console.warn("第" + lNum.toString() + "轮开始...")
         }
         else//答对了
         {
             conNum++;
         }
     }
+    conNum = 0;
 }
 
 /*************************************************每日答题部分***************************************************/
@@ -959,11 +956,12 @@ function challengeQuestion() {
  * @return: questionArray
  */
 function getFitbQuestion() {
-    var questionCollections = className("EditText").findOnce().parent();
+    var questionCollections = className("EditText").findOnce().parent().parent();
     var questionArray = [];
     var findBlank = false;
     var blankCount = 0;
     var blankNumStr = "";
+    var i = 0;
     questionCollections.children().forEach(item => {
         if (item.className() != "android.widget.EditText") {
             if (item.text() != "") {//题目段
@@ -976,7 +974,8 @@ function getFitbQuestion() {
             }
             else {
                 findBlank = true;
-                blankCount += 1;
+                blankCount = (className("EditText").findOnce(i).parent().childCount() - 1);
+                i++;
             }
         }
     });
@@ -1100,12 +1099,12 @@ function clickByAnswer(answer) {
  * @return: null
  */
 function checkAndUpdate(question, ansTiku, answer) {
-    if (className("Button").desc("下一题").exists() || className("Button").desc("完成").exists()) {//答错了
+    if (text("答案解析").exists()) {//答错了
         swipe(100, device.height - 100, 100, 100, 500);
         var nCout = 0
         while (nCout < 5) {
-            if (descStartsWith("正确答案").exists()) {
-                var correctAns = descStartsWith("正确答案").findOnce().desc().substr(5);
+            if (textStartsWith("正确答案").exists()) {
+                var correctAns = textStartsWith("正确答案").findOnce().text().substr(6);
                 console.info("正确答案是：" + correctAns);
                 if (ansTiku == "") { //题库为空则插入正确答案                
                     var sql = "INSERT INTO tiku VALUES ('" + question + "','" + correctAns + "','')";
@@ -1170,7 +1169,7 @@ function dailyQuestionLoop() {
     }
     var answer = ansTiku.replace(/(^\s*)|(\s*$)/g, "");
 
-    if (text("填空题").exists()) {
+    if (textStartsWith("填空题").exists()) {
         if (answer == "") {
             var tipsStr = getTipsStr();
             answer = getAnswerFromTips(questionArray, tipsStr);
@@ -1191,7 +1190,7 @@ function dailyQuestionLoop() {
             }
         }
     }
-    else if (text("多选题").exists() || text("单选题").exists()) {
+    else if (textStartsWith("多选题").exists() || textStartsWith("单选题").exists()) {
         if (answer == "") {
             var tipsStr = getTipsStr();
             answer = clickByTips(tipsStr);
@@ -1207,36 +1206,19 @@ function dailyQuestionLoop() {
     if (text("确定").exists()) {
         text("确定").click();
         delay(0.5);
-    }
-    else {
+    } else if (text("下一题").exists()) {
+        click("下一题");
+        delay(0.5);
+    } else if (text("完成").exists()) {
+        text("完成").click();
+        delay(0.5);
+    } else {
         console.warn("未找到右上角确定按钮控件，根据坐标点击");
         click(device.width * 0.85, device.height * 0.06);//右上角确定按钮，根据自己手机实际修改
     }
 
-    if (text("下一题").exists()) {
-        if (text("下一题").exists()) {
-            text("下一题").click();
-            delay(0.5);
-        }
-        else {
-            console.warn("未找到右上角下一题按钮控件，根据坐标点击");
-            click(device.width * 0.85, device.height * 0.06);//右上角确定按钮，根据自己手机实际修改
-        }
-    }
-
-    if (text("完成").exists()) {
-        if (text("完成").exists()) {
-            text("完成").click();
-            delay(0.5);
-        }
-        else {
-            console.warn("未找到右上角完成按钮控件，根据坐标点击");
-            click(device.width * 0.85, device.height * 0.06);//右上角确定按钮，根据自己手机实际修改
-        }
-    }
-
     checkAndUpdate(question, ansTiku, answer);
-    console.log("-----------------------------------------------------------");
+    console.log("------------");
     delay(2);
 }
 
@@ -1257,8 +1239,23 @@ function dailyQuestion() {
     delay(2);
     let dlNum = 0;//每日答题轮数
     while (true) {
+        delay(1)
+        while (!(textStartsWith("填空题").exists() || textStartsWith("多选题").exists() || textStartsWith("单选题").exists())) {
+            console.error("没有找到题目！请检查是否进入答题界面！");
+            delay(2);
+        }
         dailyQuestionLoop();
-        if (text("再来一组").exists()) {
+        if (text("再练一次").exists()) {
+            console.log("每周答题结束！")
+            text("返回").click(); delay(2);
+            back();
+            break;
+        } else if (text("查看解析").exists()) {
+            console.log("专项答题结束！")
+            back(); delay(0.5);
+            back(); delay(0.5);
+            break;
+        } else if (text("再来一组").exists()) {
             delay(2);
             dlNum++;
             if (!text("领取奖励已达今日上限").exists()) {
@@ -1267,8 +1264,8 @@ function dailyQuestion() {
                 delay(1);
             }
             else {
-                console.log("每日答题结束！返回主页！")
-                text("返回").click(); delay(0.5);
+                console.log("每日答题结束！")
+                text("返回").click(); delay(2);
                 back(); delay(1);
                 back(); delay(1);
                 break;
