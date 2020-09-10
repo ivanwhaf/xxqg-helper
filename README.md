@@ -1,6 +1,7 @@
 # 通知
 * 因学业繁重、App更新频繁，以及本人有其它项目要做，除遇重大更新，本项目将不再维护！望体谅！issue中有其他大神的改进版本！
-* 如有需要请移步大神改进版本:[https://github.com/lolisaikou/LazyStudy](https://github.com/lolisaikou/  LazyStudy)
+* 如有需要请移步大神改进版本:
+[https://github.com/lolisaikou/LazyStudy](https://github.com/lolisaikou/LazyStudy)
 
 # 注意事项
 * 本助手只供个人**学习Auto.js**使用，不得**传播**和用于**违法或商业用途**，否则造成的一切**后果自负！**
@@ -19,8 +20,8 @@
 * 点击右上角**运行**按钮运行（运行时会提示打开无障碍模式）
 
 # 特别感谢
-[lgpersonal](https://github.com/lgpersonal/LazyStudy)
-[lolisaikou](https://github.com/lolisaikou/LazyStudy)
+* [lgpersonal](https://github.com/lgpersonal/LazyStudy)
+* [lolisaikou](https://github.com/lolisaikou/LazyStudy)
 
 # 更新日志
 * v3.1.3 修复获取积分和一些小bug（适配2.14.0），优化一些小细节，增加自定义学习（文章、视频数量自定义）
