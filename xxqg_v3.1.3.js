@@ -1369,3 +1369,67 @@ function updateTikunet() {
     CreateAndInsert(liArray)
     console.log("数据库更新完毕！");
 }
+/**
+
+@description: 学习平台订阅
+
+@param: null
+
+@return: null
+*/
+function dingyue()
+{
+h=device.height;//屏幕高
+w=device.width;//屏幕宽
+x=(w/3)*2;//横坐标2分之3处
+h1=(h/6)*5;//纵坐标6分之5处
+h2=(h/6);//纵坐标6分之1处
+
+click("订阅");
+sleep(random(1000,2000)) ;
+click("添加");
+sleep(random(1000,2000)) ;
+var i=0
+while(i<cCount){
+var object = desc("订阅").find();
+if (!object.empty()) {
+
+     // 遍历订阅图标
+     object.forEach(function (currentValue, index) {
+        
+         // currentValue:订阅按钮           
+         if (currentValue && i<cCount) {
+             var like = currentValue.parent()
+
+             if (like.click()) {
+                 console.log("订阅成功")
+                 i++;
+                 sleep(random(1000,2000))  //随机延时
+             } else {
+                 console.log("Error：订阅失败")
+             }
+         }
+     })
+
+ } else if( text("你已经看到我的底线了").exists()){
+     console.log("Error：没有可以订阅的平台了!");
+     break;}
+     else{
+     swipe(x,h1,x,h2,500);
+    
+ }
+}
+back();
+sleep(random(1000,2000)) ;
+}
+
+getScores();//获取积分 ，在获取积分后面增加一个if语句
+if (myScores['订阅'] != 1) {
+dingyue();//订阅
+}
+
+在function main() 中增加一行调用
+
+dingyue();//订阅学习平台
+
+本人初学者，写的不好，请大家指正
